@@ -1,0 +1,22 @@
+
+;; ----- smex-history -----
+(
+ customize-set-variable
+ shell-command
+ package-install
+ sl
+ customize-option
+ eval-buffer
+ irony-install-server
+)
+
+;; ----- smex-data -----
+(
+ (irony-install-server . 1)
+ (customize-option . 5)
+ (package-install . 2)
+ (eval-buffer . 1)
+ (sl . 1)
+ (shell-command . 1)
+ (customize-set-variable . 1)
+)

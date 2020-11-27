@@ -1,0 +1,472 @@
+
+(require 'package)
+;; package-archivesを上書き
+(setq package-archives
+      '(("melpa" . "https://melpa.org/packages/")
+        ("melpa-stable" . "https://stable.melpa.org/packages/")
+        ("org" . "https://orgmode.org/elpa/")
+        ("gnu" . "https://elpa.gnu.org/packages/")))
+
+(package-initialize)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ansi-color-names-vector
+   ["black" "#d55e00" "#009e73" "#f8ec59" "#0072b2" "#cc79a7" "#56b4e9" "white"])
+ '(custom-enabled-themes '(deeper-blue))
+ '(initial-frame-alist nil)
+ '(package-selected-packages
+   '(mozc neotree open-junk-file textx-mode presentation helm-projectile projectile helm-selected helm-ag helm-smex which-key helm-img helm-swoop swoop volatile-highlights nyan-mode hlinum hiwin bind-chord diminish use-package yasnippet-classic-snippets yasnippet-snippets flycheck-irony flylisp company-irony-c-headers company-irony rainbow-mode undo-tree beacon sl helm-company helm elpy company-jedi jedi flycheck company quelpa snippet yasnippet-lean)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+
+(defun my/quelpa-setup ()
+  "Setup Quelpa packages."
+  (interactive)
+  (load (locate-user-emacs-file "/home/mizuno/.emacs.d/elpa/quelpa-20201022.638")))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; 初期表示位置、サイズ
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (setq initial-frame-alist
+;;       '((left   .   0)			; 位置 (X)
+;; 	(top    . 465)			; 位置 (Y)
+;; 	(width  . 235)			; サイズ(幅)
+;; 	(height .  30)			; サイズ(高さ)
+;; 	))
+;; (setq default-frame-alist
+;;       '((left   .   0)			; 位置 (X)
+;; 	(top    . 465)			; 位置 (Y)
+;; 	(width  . 235)			; サイズ(幅)
+;; 	(height .  30)			; サイズ(高さ)
+;; 	))
+
+(eval-when-compile
+  (require 'use-package))
+(require 'diminish)
+(require 'bind-key)
+
+;;emacsのリスト操作APIライブラリ
+;; (require 'dash)
+(use-package dash)
+
+
+
+;; ビープ音禁止
+(setq ring-bell-function 'ignore)
+
+;; 選択領域を削除キーで一括削除
+(setq delete-selection-mode t)
+(pending-delete-mode)
+
+
+
+;;
+(require 'hiwin)
+(hiwin-activate)
+(set-face-background 'default "gray10")
+(set-face-background 'hiwin-face "gray16")
+
+;;
+(require 'hl-line)
+(set-face-background 'hl-line "black")
+(set-face-attribute 'hl-line nil :inherit nil)
+
+
+(require 'linum)
+(global-linum-mode)
+(setq linum-format "%5d")
+
+
+;;
+(defvar global-hl-line-timer-exclude-modes '(todotext-mode))
+(defun global-hl-line-timer-function()
+  (unless (memq major-mode global-hl-line-timer-exclude-modes)
+    (global-hl-line-unhighlight-all)
+    (let ((global-hl-line-mode t))
+      (global-hl-line-highlight))))
+(setq global-hl-line-timer
+      (run-with-idle-timer 0.03 t 'global-hl-line-timer-function))
+
+
+(require 'hlinum)
+(hlinum-activate)
+(set-face-foreground 'linum-highlight-face "#3FC")
+(set-face-background 'linum-highlight-face "black")
+
+
+;; 行頭 kill-line (C-k) で行全体をカット
+(setq kill-whole-line t)
+
+;; 読み取り専用バッファーでもカット系でコピー可能
+(setq kill-read-only-ok t)
+
+
+;; 改行時などに自動でインデント
+;;   (C-j と C-m の入れ替え)
+(if (fboundp 'electric-indent-mode)
+    (electric-indent-mode 0))
+;; スタート画面(メッセージ)を表示しない
+(setq inhibit-startup-screen t)
+
+
+;; タイトルバーに時計とファイル名表示
+(when (window-system)
+  ;; display-timeより先にsetしておかないとdefaultの書式?になる workaround
+  (setq display-time-string-forms
+    '((format "%s/%s/%s" year month day)
+      (format "(%s:%s)" 24-hours minutes)))
+  (display-time) ;; display-time-stringの有効化
+  ;; タイトルバーの書式設定 global-mode-stringにdisplay-time-stringが入っている
+  ;; バッファがファイルのときはフルパス、でなければバッファ名表示
+  ;; if(buffer-file-name) の評価がsetq時で終わらないよう:eval
+  (setq frame-title-format '("" global-mode-string
+                             (:eval (if (buffer-file-name) " %f" " %b"))) ) )
+
+(defalias 'major-mode-of 'magic-filetype-major-mode-of)
+
+(use-package nyan-mode :defer t
+  :custom
+  (nyan-bar-length 16)
+  :init
+  (nyan-mode t))
+
+
+
+
+;; White space
+(setq-default show-trailing-whitespace t)
+
+
+
+;; Uniquify
+;; (custom-set-variables '(uniquify-buffer-name-style 'post-forward-angle-brackets))
+
+;; Show paren
+(use-package paren
+  :init
+  (show-paren-mode t))
+;; Column mode
+;; (use-package simple
+;;   :init
+;;   (column-number-mode t))
+
+;; volatile-highlights.el
+(use-package volatile-highlights
+  :diminish volatile-highlights-mode
+  :init
+  (volatile-highlights-mode t))
+
+;; Rainbow mode
+(use-package rainbow-mode :defer t
+  :diminish rainbow-mode)
+
+
+
+;; Key config ;(use-package bind-key)
+(progn
+  (bind-key  "M-ESC ESC"   'keyboard-quit)
+  (bind-key  "C-S-n"       'make-frame)
+  (bind-key  "C-S-w"       'delete-frame)
+  (bind-key  "M-N"         'untitled-new-buffer)
+  (bind-key  "C-M-S-d"     'projectile-dired)
+  (bind-key  "C-c :"       'right-click-context-menu)
+  (bind-key  "C-c ;"       'imenu)
+  (bind-key  "C-c c;"      'compile)
+  (bind-key  "C-c R"       'revert-buffer)
+  (bind-key  "C-c S-i"     'my/display-file-info)
+  (bind-key  "C-x j"       'dired-jump)
+  (bind-key  "C-x C-S-e"   'pp-eval-last-sexp)
+  (bind-key  "C-x お"      'other-window)
+  (bind-key  "C-S-v"       'scroll-down-command)
+  (bind-key  "M-o"         'swoop)
+  (bind-key  "C-M-o"       'swoop-multi)
+  (bind-key  "M-:"        'eval-expression)
+  (bind-key  "M-i"         'helm-imenu prog-mode-map)
+  (bind-key  "M-ESC :"    'eval-expression)
+  (bind-key  "<S-tab>"     'my/outdent-dwim)
+  (bind-key  "C-M-y"       'helm-show-kill-ring)
+  (bind-key  "M-<left>"    'bs-cycle-previous)
+  (bind-key  "M-<right>"   'bs-cycle-next)
+  (bind-key  "C-M-S-y"     'my/kill-buffer-file-name)
+  (bind-key  "M-<f5>"      'compile)
+  (bind-key  "<f5>"        'quickrun)
+  (bind-key  "<f9>"        'zone)
+  (bind-key  "<f12>"       'neotree-toggle)
+  (bind-key* "C-c <left>"  'windmove-left)
+  (bind-key* "C-c <down>"  'windmove-down)
+  (bind-key* "C-c <up>"    'windmove-up)
+  (bind-key* "C-c <right>" 'windmove-right)
+  ;; (bind-key* "S-<left>"  'windmove-left)
+  ;; (bind-key* "S-<down>"  'windmove-down)
+  ;; (bind-key* "S-<up>"    'windmove-up)
+  ;; (bind-key* "S-<right>" 'windmove-right)
+)
+(cond
+  ((eq window-system 'ns)
+  (--each '(ns-command-modifier ns-alternate-modifier)
+    (when (boundp it) (set it 'meta)))
+  (bind-key "M-¥" (lambda () (interactive) (insert "¥")))
+  (bind-key "¥"   (lambda () (interactive) (insert "\\"))))
+ ((eq window-system 'x)
+  (--each '(x-meta-keysym x-super-keysym)
+    (when (boundp it) (set it 'meta)))))
+
+
+;; key-chord
+(use-package key-chord :defer t
+  :custom
+  (key-chord-two-keys-delay 0.04)
+  :init
+  (key-chord-mode 1)
+  :config
+  (key-chord-define-global "df" 'find-function)
+  (key-chord-define-global "fh" 'describe-function)
+  (key-chord-define-global "fv" 'find-variable)
+  (key-chord-define-global "jb" 'jetbrains-open-buffer-file)
+  (key-chord-define-global "@p" 'package-install)
+  (key-chord-define-global "kl" 'align-regexp)
+  (key-chord-define-global "rt" 'toggle-load-theme)
+  (key-chord-define-global "wr" 'writeroom-mode)
+  (key-chord-define-global "m," 'reload-major-mode)
+  (key-chord-define-global "mc" 'my/buffer-minchoize))
+
+
+;; which-key
+(use-package which-key
+  :diminish which-key-mode
+  :init
+  (which-key-setup-side-window-right-bottom)
+  (which-key-mode t))
+
+
+(use-package helm :defer t
+  :diminish helm-mode
+  :bind (("C-x C-f" . helm-find-files)
+         ("M-x" . helm-smex)
+         ("M-X" . helm-smex-major-mode-commands)
+         ("C-:" . helm-ag-project-root)
+	 :map helm-map
+	 ("<tab>" . helm-execute-persistent-action)
+	 ("C-z" . helm-select-action))
+  :init
+  (require 'helm-config)
+  (helm-mode t))
+
+(use-package helm-ag :defer t
+  :custom
+  (helm-ag-base-command "rg --vimgrep --no-heading")
+  (helm-ff-file-compressed-list '("epub" "gz" "bz2" "zip" "7z")))
+
+;; ispell
+(use-package ispell
+  :custom
+  (ispell-program-name "hunspell")
+  (ispell-really-hunspell t))
+
+
+
+(use-package eldoc :defer t
+  :diminish eldoc-mode
+  :custom
+  (eldoc-minor-mode-string ""))
+
+
+
+
+
+
+;; (require 'company)
+;; (setq company-global-modes '(not gud-mode))
+;; (global-company-mode)
+;; (setq company-idle-delay 0.2)
+;; (setq company-minimum-prefix-length 2)
+;; (setq company-selection-wrap-around t)
+
+
+
+(use-package company :defer t
+  :diminish company-mode
+  :config
+  (setq company-global-modes '(not gud-mode))
+  (setq company-idle-delay 0.2)
+  (setq company-minimum-prefix-length 2)
+  (setq company-selection-wrap-around t)
+  :custom (
+	   (company-transformers '(company-sort-by-backend-importance))
+  	   (company-idle-delay 0.2)
+  	   (company-minimum-prefix-length 3)
+  	   (company-selection-wrap-around t)
+  	   (completion-ignore-case t)
+  	   (company-dabbrev-downcase nil)
+	   )
+  :bind (("C-M-i" . company-complete)
+	 :map company-active-map
+  	 ("C-n" . company-select-next) ;; C-n, C-pで補完候補を次/前の候補を選択
+  	 ("C-p" . company-select-previous)
+  	 ("C-i" . company-complete-selection) ;; TABで候補を設定
+  	 ("<tab>" . company-complete-selection) ;; TABで候補を設定
+	 ("C-s" . company-filter-candidates) ;; C-sで絞り込む
+  	 ("C-f" . company-complete-selection) ;; C-fで候補を設定
+	 :map company-search-map
+  	 ("C-n" . company-select-next)
+  	 ("C-p" . company-select-previous)
+  	 :map emacs-lisp-mode-map
+  	 ("C-M-i" . company-complete)) ;; 各種メジャーモードでも C-M-iで company-modeの補完を使う
+  :init
+  (global-company-mode t))
+
+
+
+
+
+(require 'irony)
+(add-hook 'c-mode-common-hook 'irony-mode)
+(add-to-list 'company-backends 'company-irony)
+
+(add-hook 'irony-mode-hook 'company-irony-setup-begin-commands)
+(add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
+
+(require 'flycheck)
+(require 'flycheck-irony)
+(flycheck-irony-setup)
+(add-hook 'c-mode-common-hook 'flycheck-mode)
+(add-hook 'flycheck-mode-hook 'flycheck-irony-setup)
+
+(require 'yasnippet)
+(yas-global-mode)
+
+
+
+
+;; Projectile
+(use-package projectile :defer t
+  :hook ((projectile-mode . projectile-rails-on))
+  :custom
+  (projectile-enable-caching nil)
+  (projectile-completion-system 'helm))
+
+(use-package helm-projectile :defer t
+  :config
+  (helm-projectile-on))
+
+
+;; YASnippets
+(use-package yasnippet
+  :diminish yas-minor-mode
+  :custom
+  (yas-alias-to-yas/prefix-p nil)
+  :bind
+  (
+   :map yas-minor-mode-map
+	("C-x i i" . yas-insert-snippet);; 既存スニペットを挿入する
+	("C-x i n" . yas-new-snippet);; 新規スニペットを作成するバッファを用意
+	("C-x i v" . yas-visit-snippet-file);; 既存スニペットを観覧・編集
+	)
+  :init
+  (setq yas-snippet-dirs
+	'("/home/mizuno/.emacs.d/snippets"
+	  "/home/mizuno/.emacs.d/elpa/yasnippet-snippets-20201118.2148/snippets"
+	  "/home/mizuno/.emacs.d/elpa/yasnippet-classic-snippets-1.0.2/snippets"))
+  (yas-global-mode t))
+
+
+(defun my-presentation-on ()
+  (helm-mode -1)
+  (ido-ubiquitous-mode 1)
+  (bind-key "M-x" #'smex))
+
+(defun my-presentation-off ()
+  (ido-ubiquitous-mode -1)
+  (helm-mode 1)
+  (bind-key "M-x" #'helm-smex))
+
+(use-package presentation-mode :defer t
+  :hook ((presentation-on  . my-presentation-on)
+         (presentation-off . my-presentation-off)))
+
+
+
+
+;; text-mode
+(defun my-text-mode-setup ()
+  "Setup function for `text-mode'."
+  (unless (eq major-mode 'html-mode)
+    (setq line-spacing 5)))
+
+(use-package text-mode :defer t
+  :mode ("/LICENSE\\'")
+  :hook ((text-mode . my-text-mode-setup)))
+
+
+
+;; Undo Tree
+(use-package undo-tree :ensure t
+  :diminish undo-tree-mode
+  :init
+  (global-undo-tree-mode)
+  (bind-key "C-_" #'undo-tree-undo)
+  (bind-key "C-?" #'undo-tree-redo))
+
+
+;; Open junk file
+(use-package open-junk-file
+  :bind (("C-c j" . open-junk-file))
+  :custom
+  (open-junk-file-format "~/junk/%Y/%m/%Y-%m-%d-%H%M%S-"))
+
+
+;; Swoop
+(use-package helm-swoop
+  :bind (("C-;" . helm-swoop)
+         ("M-C-;" . helm-multi-swoop)))
+
+
+;; image-mode
+(use-package image-mode :defer t
+  :bind (:map image-mode-map
+         ("<wheel-up>"    . image-previous-line)
+         ("<wheel-down>"  . image-next-line)
+         ("<wheel-right>" . image-forward-hscroll)
+         ("<wheel-left>"  . image-backward-hscroll)))
+
+
+;; NeoTree
+(defun my/neotree-kill-filename-at-point ()
+  "Kill full path of note at point."
+  (interactive)
+  (message "Copy %s"
+           (kill-new (neo-buffer--get-filename-current-line))))
+
+(use-package neotree :defer t
+  :bind (:map neotree-mode-map
+         ("M-w" . my/neotree-kill-filename-at-point)))
+
+
+(use-package beacon
+  :custom
+  (beacon-color "yellow")
+  :config
+  (beacon-mode 1))
+
+
+(use-package sl)
+
+
+
+(require 'nyan-mode)
+(nyan-mode t)
+;; 背景がわかりづらいのでxpm画像を差し替え
+;; (setq +nyan-outerspace-image+ (concat +nyan-directory+ "img/tomato.xpm"))
+(setq +nyan-outerspace-image+ (concat +nyan-directory+ "img/outerspace3.xpm"))
+;; (setq +nyan-cat-image+ (concat +nyan-directory+ "img/a.xpm"))
